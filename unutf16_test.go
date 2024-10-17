@@ -1,7 +1,6 @@
 package unutf16_test
 
 import (
-	"bufio"
 	"bytes"
 	"errors"
 	"io"
@@ -39,8 +38,7 @@ func TestUTF16BEToUTF8(t *testing.T) {
 	utf16beData := []byte{0xFE, 0xFF, 0x00, 0x68, 0x00, 0x65, 0x00, 0x6C, 0x00, 0x6C, 0x00, 0x6F}
 
 	reader := bytes.NewReader(utf16beData)
-	bufReader := bufio.NewReader(reader)
-	utf8Reader := unutf16.NewReader(bufReader)
+	utf8Reader := unutf16.NewReader(reader)
 
 	// Expected UTF-8 output
 	expected := "hello"

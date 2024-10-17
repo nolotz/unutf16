@@ -1,7 +1,7 @@
 package unutf16
 
 import (
-	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 
@@ -46,32 +46,28 @@ func (r *Reader) Read(p []byte) (int, error) {
 
 // initialize sets up the decoder by detecting the BOM and initializing the appropriate transform.Reader.
 func (r *Reader) initialize() error {
-	// Create a buffered reader to ensure we can "peek" into the stream for BOM detection
-	var bufReader *bufio.Reader
-	if br, ok := r.source.(*bufio.Reader); ok {
-		bufReader = br
-	} else {
-		bufReader = bufio.NewReader(r.source)
-	}
-
+	bom := make([]byte, 2)
 	// Read the first 2 bytes to check for BOM
-	bom, err := bufReader.Peek(2) // Peek allows us to see the first 2 bytes without consuming them
+	_, err := r.source.Read(bom)
 	if err != nil && err != io.EOF {
 		return &BOMPeekError{
 			Cause: err,
 		}
 	}
 
+	// Stitch everything back again
+	newReader := io.MultiReader(bytes.NewReader(bom), r.source)
+
 	// Detect BOM and create the appropriate decoder
 	var decoder io.Reader
 	if len(bom) >= 2 && bom[0] == 0xFF && bom[1] == 0xFE {
 		// UTF-16 Little Endian
-		decoder = transform.NewReader(bufReader, unicode.UTF16(unicode.LittleEndian, unicode.UseBOM).NewDecoder())
+		decoder = transform.NewReader(newReader, unicode.UTF16(unicode.LittleEndian, unicode.UseBOM).NewDecoder())
 	} else if len(bom) >= 2 && bom[0] == 0xFE && bom[1] == 0xFF {
 		// UTF-16 Big Endian
-		decoder = transform.NewReader(bufReader, unicode.UTF16(unicode.BigEndian, unicode.UseBOM).NewDecoder())
+		decoder = transform.NewReader(newReader, unicode.UTF16(unicode.BigEndian, unicode.UseBOM).NewDecoder())
 	} else {
-		decoder = bufReader
+		decoder = newReader
 	}
 
 	// Assign the decoder to the reader
