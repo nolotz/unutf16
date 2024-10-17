@@ -3,8 +3,11 @@ package unutf16_test
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"io"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/nolotz/unutf16"
 )
@@ -71,4 +74,32 @@ func TestNonUTF16Passthrough(t *testing.T) {
 	if output.String() != expected {
 		t.Errorf("Expected '%s', got '%s'", expected, output.String())
 	}
+}
+
+// TestPeekFailure simulates a failure during the Peek operation by using ErrorReader.
+func TestPeekFailure(t *testing.T) {
+	// Create an ErrorReader that triggers an error after 0 bytes (to simulate a peek failure)
+	reader := new(errorReader)
+
+	// Create the UTF-16 to UTF-8 reader
+	utf8Reader := unutf16.NewReader(reader)
+
+	// Attempt to read from the reader, which should fail due to the simulated peek error
+	buffer := make([]byte, 10)
+	_, err := utf8Reader.Read(buffer)
+	if err == nil {
+		t.Fatalf("Expected an error during Read, but got none")
+	}
+
+	assert.IsType(t, new(unutf16.BOMPeekError), err)
+	assert.ErrorIs(t, err, simulatedError)
+	assert.Equal(t, "failed to peek BOM: simulated read error", err.Error())
+}
+
+var simulatedError = errors.New("simulated read error")
+
+type errorReader struct{}
+
+func (e *errorReader) Read(p []byte) (int, error) {
+	return 0, simulatedError
 }

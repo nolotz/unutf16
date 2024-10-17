@@ -57,7 +57,9 @@ func (r *Reader) initialize() error {
 	// Read the first 2 bytes to check for BOM
 	bom, err := bufReader.Peek(2) // Peek allows us to see the first 2 bytes without consuming them
 	if err != nil && err != io.EOF {
-		return fmt.Errorf("failed to read BOM: %v", err)
+		return &BOMPeekError{
+			Cause: err,
+		}
 	}
 
 	// Detect BOM and create the appropriate decoder
@@ -75,4 +77,31 @@ func (r *Reader) initialize() error {
 	// Assign the decoder to the reader
 	r.decoder = decoder
 	return nil
+}
+
+// BOMPeekError is a custom error type that represents an error encountered
+// while attempting to peek the Byte Order Mark (BOM) from an input stream.
+// This error wraps the original error (`Cause`) that occurred during the peek operation.
+type BOMPeekError struct {
+	Cause error
+}
+
+// Error implements the error interface for BOMPeekError.
+// Returns a formatted error message that includes the underlying cause of the error.
+//
+// Example error message:
+//
+//	"failed to peek BOM: unexpected EOF"
+func (e *BOMPeekError) Error() string {
+	return fmt.Sprintf("failed to peek BOM: %v", e.Cause)
+}
+
+// Unwrap allows the BOMPeekError to expose the underlying error that caused the failure.
+// This can be used to retrieve the original error when handling multiple layers of errors.
+//
+// Example usage:
+//
+//	if errors.Is(err, io.EOF) { ... }  // Allows matching against the wrapped error.
+func (e *BOMPeekError) Unwrap() error {
+	return e.Cause
 }
