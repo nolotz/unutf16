@@ -1,0 +1,25 @@
+name: test
+on: [push, pull_request]
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+
+      - name: Setup go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: deps
+        run: go mod download
+        env: { GOPROXY: 'https://proxy.golang.org' }
+
+      - name: test
+        run: >
+          cd $GITHUB_WORKSPACE
+          && go test -v ./...
