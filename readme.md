@@ -1,4 +1,6 @@
 # Lazy UTF-16 to UTF-8 Reader
+[![GoDoc](https://img.shields.io/badge/godoc-reference-5272B4)](https://pkg.go.dev/mod/github.com/nolotz/unutf16)
+[![Go Report Card](https://goreportcard.com/badge/github.com/nolotz/unutf16)](https://goreportcard.com/report/github.com/nolotz/unutf16)
 
 This Go library provides a custom io.Reader that lazily converts UTF-16 encoded text streams into UTF-8. The reader supports automatic detection of Byte Order Mark (BOM) and converts both UTF-16 Little Endian (LE) and Big Endian (BE) to UTF-8, making it ideal for handling mixed or unknown UTF-16 encoded data sources.
 
